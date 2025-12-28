@@ -195,12 +195,14 @@ locals {
     isSubjectCaseSensitive          = var.filter.is_subject_case_sensitive
     enableAdvancedFilteringOnArrays = var.filter.enable_advanced_filtering_on_arrays
     advancedFilters = var.filter.advanced_filters != null ? [
-      for f in var.filter.advanced_filters : {
-        key          = f.key
-        operatorType = f.operator_type
-        value        = f.value
-        values       = f.values
-      }
+      for f in var.filter.advanced_filters : merge(
+        {
+          key          = f.key
+          operatorType = f.operator_type
+        },
+        f.value != null ? { value = f.value } : {},
+        f.values != null ? { values = f.values } : {}
+      )
     ] : null
   } : null
   # Transform retry policy

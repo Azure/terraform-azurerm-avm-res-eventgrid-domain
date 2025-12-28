@@ -160,6 +160,78 @@ Type: `map(string)`
 
 Default: `{}`
 
+### <a name="input_domain_topics"></a> [domain\_topics](#input\_domain\_topics)
+
+Description: A map of domain topics to create with their nested event subscriptions.
+
+Each topic supports:
+- `name` - (Required) The name of the domain topic.
+- `event_subscriptions` - (Optional) A map of event subscriptions for this topic. Each subscription supports:
+  - `name` - (Required) The name of the event subscription.
+  - `destination` - (Optional) The destination for events.
+  - `delivery_with_resource_identity` - (Optional) Delivery configuration with managed identity.
+  - `filter` - (Optional) Event filtering configuration.
+  - `labels` - (Optional) List of labels for the subscription.
+  - `event_delivery_schema` - (Optional) Event delivery schema (EventGridSchema, CloudEventSchemaV1\_0, CustomInputSchema).
+  - `retry_policy` - (Optional) Retry policy configuration.
+  - `expiration_time_utc` - (Optional) Expiration time in UTC.
+  - `dead_letter_destination` - (Optional) Dead letter destination configuration.
+  - `dead_letter_with_resource_identity` - (Optional) Dead letter destination with managed identity.
+  - `properties` - (Optional) Additional properties to pass directly.
+
+Example:
+```terraform
+domain_topics = {
+  topic1 = {
+    name = "my-topic"
+    event_subscriptions = {
+      sub1 = {
+        name = "my-subscription"
+        destination = {
+          endpointType = "EventHub"
+          properties = {
+            resourceId = "/subscriptions/.../eventhubs/..."
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    name = string
+    event_subscriptions = optional(map(object({
+      name                            = string
+      destination                     = optional(any)
+      delivery_with_resource_identity = optional(any)
+      filter = optional(object({
+        advanced_filters                    = optional(list(any))
+        enable_advanced_filtering_on_arrays = optional(bool)
+        included_event_types                = optional(list(string))
+        is_subject_case_sensitive           = optional(bool, false)
+        subject_begins_with                 = optional(string)
+        subject_ends_with                   = optional(string)
+      }))
+      labels                = optional(list(string))
+      event_delivery_schema = optional(string)
+      retry_policy = optional(object({
+        event_time_to_live_in_minutes = optional(number, 1440)
+        max_delivery_attempts         = optional(number, 30)
+      }))
+      expiration_time_utc                = optional(string)
+      dead_letter_destination            = optional(any)
+      dead_letter_with_resource_identity = optional(any)
+      properties                         = optional(any, {})
+    })), {})
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
 Description: This variable controls whether or not telemetry is enabled for the module.  
@@ -424,6 +496,14 @@ The following outputs are exported:
 
 Description: The endpoint URL of the Event Grid Domain.
 
+### <a name="output_domain_topic_event_subscriptions"></a> [domain\_topic\_event\_subscriptions](#output\_domain\_topic\_event\_subscriptions)
+
+Description: A map of domain topic event subscriptions created. The map key is the combined topic-subscription key. The map value contains resource\_id and name.
+
+### <a name="output_domain_topics"></a> [domain\_topics](#output\_domain\_topics)
+
+Description: A map of domain topics created. The map key is the input key from var.domain\_topics. The map value contains resource\_id and name.
+
 ### <a name="output_identity"></a> [identity](#output\_identity)
 
 Description: The managed identity configuration of the Event Grid Domain, including principal\_id and tenant\_id for system-assigned identity.
@@ -454,6 +534,18 @@ The following Modules are called:
 Source: Azure/avm-utl-interfaces/azure
 
 Version: 0.5.0
+
+### <a name="module_domain_topic"></a> [domain\_topic](#module\_domain\_topic)
+
+Source: ./modules/domain_topic
+
+Version:
+
+### <a name="module_domain_topic_event_subscription"></a> [domain\_topic\_event\_subscription](#module\_domain\_topic\_event\_subscription)
+
+Source: ./modules/domain_topic_event_subscription
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

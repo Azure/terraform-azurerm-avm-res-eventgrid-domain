@@ -5,6 +5,26 @@ DESCRIPTION
   value       = try(azapi_resource.this.output.properties.endpoint, null)
 }
 
+output "domain_topic_event_subscriptions" {
+  description = "A map of domain topic event subscriptions created. The map key is the combined topic-subscription key. The map value contains resource_id and name."
+  value = {
+    for k, v in module.domain_topic_event_subscription : k => {
+      resource_id = v.resource_id
+      name        = v.name
+    }
+  }
+}
+
+output "domain_topics" {
+  description = "A map of domain topics created. The map key is the input key from var.domain_topics. The map value contains resource_id and name."
+  value = {
+    for k, v in module.domain_topic : k => {
+      resource_id = v.resource_id
+      name        = v.name
+    }
+  }
+}
+
 output "identity" {
   description = <<DESCRIPTION
 The managed identity configuration of the Event Grid Domain, including principal_id and tenant_id for system-assigned identity.

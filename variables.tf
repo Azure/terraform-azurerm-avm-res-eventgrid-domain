@@ -143,6 +143,75 @@ DESCRIPTION
   nullable    = false
 }
 
+variable "domain_topics" {
+  type = map(object({
+    name = string
+    event_subscriptions = optional(map(object({
+      name                            = string
+      destination                     = optional(any)
+      delivery_with_resource_identity = optional(any)
+      filter = optional(object({
+        advanced_filters                    = optional(list(any))
+        enable_advanced_filtering_on_arrays = optional(bool)
+        included_event_types                = optional(list(string))
+        is_subject_case_sensitive           = optional(bool, false)
+        subject_begins_with                 = optional(string)
+        subject_ends_with                   = optional(string)
+      }))
+      labels                = optional(list(string))
+      event_delivery_schema = optional(string)
+      retry_policy = optional(object({
+        event_time_to_live_in_minutes = optional(number, 1440)
+        max_delivery_attempts         = optional(number, 30)
+      }))
+      expiration_time_utc                = optional(string)
+      dead_letter_destination            = optional(any)
+      dead_letter_with_resource_identity = optional(any)
+      properties                         = optional(any, {})
+    })), {})
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map of domain topics to create with their nested event subscriptions.
+
+Each topic supports:
+- `name` - (Required) The name of the domain topic.
+- `event_subscriptions` - (Optional) A map of event subscriptions for this topic. Each subscription supports:
+  - `name` - (Required) The name of the event subscription.
+  - `destination` - (Optional) The destination for events.
+  - `delivery_with_resource_identity` - (Optional) Delivery configuration with managed identity.
+  - `filter` - (Optional) Event filtering configuration.
+  - `labels` - (Optional) List of labels for the subscription.
+  - `event_delivery_schema` - (Optional) Event delivery schema (EventGridSchema, CloudEventSchemaV1_0, CustomInputSchema).
+  - `retry_policy` - (Optional) Retry policy configuration.
+  - `expiration_time_utc` - (Optional) Expiration time in UTC.
+  - `dead_letter_destination` - (Optional) Dead letter destination configuration.
+  - `dead_letter_with_resource_identity` - (Optional) Dead letter destination with managed identity.
+  - `properties` - (Optional) Additional properties to pass directly.
+
+Example:
+```terraform
+domain_topics = {
+  topic1 = {
+    name = "my-topic"
+    event_subscriptions = {
+      sub1 = {
+        name = "my-subscription"
+        destination = {
+          endpointType = "EventHub"
+          properties = {
+            resourceId = "/subscriptions/.../eventhubs/..."
+          }
+        }
+      }
+    }
+  }
+}
+```
+DESCRIPTION
+  nullable    = false
+}
+
 variable "enable_telemetry" {
   type        = bool
   default     = true
