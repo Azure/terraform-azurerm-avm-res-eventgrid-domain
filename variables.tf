@@ -132,17 +132,6 @@ When true the Event Grid Domain will have local authentication disabled (ARM pro
 DESCRIPTION
 }
 
-variable "domain_event_subscriptions" {
-  type        = map(string)
-  default     = {}
-  description = <<DESCRIPTION
-A map of domain-level event subscriptions to create. Each subscription is created using the domain_event_subscription submodule.
-The map key is arbitrary and used only for Terraform resource identification.
-To configure event subscriptions, use the domain_event_subscription submodule directly with the required parameters.
-DESCRIPTION
-  nullable    = false
-}
-
 variable "domain_topics" {
   type = map(object({
     name = string
@@ -362,6 +351,7 @@ variable "private_endpoints" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
