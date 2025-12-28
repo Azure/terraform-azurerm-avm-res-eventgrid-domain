@@ -19,6 +19,11 @@ DESCRIPTION
   value       = azapi_resource.this.name
 }
 
+output "private_endpoints" {
+  description = "A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azapi_resource private endpoint resource."
+  value       = azapi_resource.private_endpoints
+}
+
 output "resource_id" {
   description = <<DESCRIPTION
 The Azure Resource Manager ID of the Event Grid Domain.

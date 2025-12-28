@@ -132,6 +132,17 @@ When true the Event Grid Domain will have local authentication disabled (ARM pro
 DESCRIPTION
 }
 
+variable "domain_event_subscriptions" {
+  type        = map(string)
+  default     = {}
+  description = <<DESCRIPTION
+A map of domain-level event subscriptions to create. Each subscription is created using the domain_event_subscription submodule.
+The map key is arbitrary and used only for Terraform resource identification.
+To configure event subscriptions, use the domain_event_subscription submodule directly with the required parameters.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "enable_telemetry" {
   type        = bool
   default     = true

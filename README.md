@@ -23,6 +23,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.private_endpoints](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
@@ -148,6 +149,16 @@ Description: When true the Event Grid Domain will have local authentication disa
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_domain_event_subscriptions"></a> [domain\_event\_subscriptions](#input\_domain\_event\_subscriptions)
+
+Description: A map of domain-level event subscriptions to create. Each subscription is created using the domain\_event\_subscription submodule.  
+The map key is arbitrary and used only for Terraform resource identification.  
+To configure event subscriptions, use the domain\_event\_subscription submodule directly with the required parameters.
+
+Type: `map(string)`
+
+Default: `{}`
 
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
@@ -421,6 +432,10 @@ Description: The managed identity configuration of the Event Grid Domain, includ
 
 Description: The name of the Event Grid Domain.
 
+### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
+
+Description: A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azapi\_resource private endpoint resource.
+
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
 Description: The Azure Resource Manager ID of the Event Grid Domain.
@@ -432,7 +447,13 @@ Use this to grant RBAC permissions for delivering events to destinations.
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_avm_interfaces"></a> [avm\_interfaces](#module\_avm\_interfaces)
+
+Source: Azure/avm-utl-interfaces/azure
+
+Version: 0.5.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
