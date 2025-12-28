@@ -150,16 +150,6 @@ Type: `bool`
 
 Default: `true`
 
-### <a name="input_domain_event_subscriptions"></a> [domain\_event\_subscriptions](#input\_domain\_event\_subscriptions)
-
-Description: A map of domain-level event subscriptions to create. Each subscription is created using the domain\_event\_subscription submodule.  
-The map key is arbitrary and used only for Terraform resource identification.  
-To configure event subscriptions, use the domain\_event\_subscription submodule directly with the required parameters.
-
-Type: `map(string)`
-
-Default: `{}`
-
 ### <a name="input_domain_topics"></a> [domain\_topics](#input\_domain\_topics)
 
 Description: A map of domain topics to create with their nested event subscriptions.
@@ -401,6 +391,7 @@ map(object({
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
