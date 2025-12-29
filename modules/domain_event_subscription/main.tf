@@ -294,4 +294,9 @@ resource "azapi_resource" "this" {
       } : {}
     )
   }
+  ignore_casing             = true
+  ignore_missing_property   = true
+  ignore_null_property      = true
+  response_export_values    = ["*"]
+  schema_validation_enabled = false
 }
