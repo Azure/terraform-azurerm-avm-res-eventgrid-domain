@@ -23,11 +23,10 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.private_endpoints](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_resource_group.TODO](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
@@ -47,19 +46,35 @@ Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: The name of the this resource.
+Description: The name of the Event Grid Domain.
 
 Type: `string`
 
-### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
 
-Description: The resource group where the resources will be deployed.
+Description: The ID of the resource group where the Event Grid Domain will be deployed.
 
 Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_auto_create_topic_with_first_subscription"></a> [auto\_create\_topic\_with\_first\_subscription](#input\_auto\_create\_topic\_with\_first\_subscription)
+
+Description: Automatically create a topic within this domain when the first event subscription is created. Defaults to null (API default).
+
+Type: `bool`
+
+Default: `null`
+
+### <a name="input_auto_delete_topic_with_last_subscription"></a> [auto\_delete\_topic\_with\_last\_subscription](#input\_auto\_delete\_topic\_with\_last\_subscription)
+
+Description: Automatically delete a topic within this domain when the last event subscription is deleted. Defaults to null (API default).
+
+Type: `bool`
+
+Default: `null`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
@@ -82,6 +97,14 @@ object({
     }), null)
   })
 ```
+
+Default: `null`
+
+### <a name="input_data_residency_boundary"></a> [data\_residency\_boundary](#input\_data\_residency\_boundary)
+
+Description: Data residency boundary to set on the Event Grid Domain. Maps to the ARM property `dataResidencyBoundary`. Allowed values: 'WithinGeopair' (API default) and 'WithinRegion'. If `null`, the module will set `WithinGeopair` in the ARM payload to make the default explicit.
+
+Type: `string`
 
 Default: `null`
 
@@ -119,6 +142,86 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_disable_local_auth"></a> [disable\_local\_auth](#input\_disable\_local\_auth)
+
+Description: When true the Event Grid Domain will have local authentication disabled (ARM property `disableLocalAuth`). The module will always set this property; default is `true` (local auth disabled).
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_domain_topics"></a> [domain\_topics](#input\_domain\_topics)
+
+Description: A map of domain topics to create with their nested event subscriptions.
+
+Each topic supports:
+- `name` - (Required) The name of the domain topic.
+- `event_subscriptions` - (Optional) A map of event subscriptions for this topic. Each subscription supports:
+  - `name` - (Required) The name of the event subscription.
+  - `destination` - (Optional) The destination for events.
+  - `delivery_with_resource_identity` - (Optional) Delivery configuration with managed identity.
+  - `filter` - (Optional) Event filtering configuration.
+  - `labels` - (Optional) List of labels for the subscription.
+  - `event_delivery_schema` - (Optional) Event delivery schema (EventGridSchema, CloudEventSchemaV1\_0, CustomInputSchema).
+  - `retry_policy` - (Optional) Retry policy configuration.
+  - `expiration_time_utc` - (Optional) Expiration time in UTC.
+  - `dead_letter_destination` - (Optional) Dead letter destination configuration.
+  - `dead_letter_with_resource_identity` - (Optional) Dead letter destination with managed identity.
+  - `properties` - (Optional) Additional properties to pass directly.
+
+Example:
+```terraform
+domain_topics = {
+  topic1 = {
+    name = "my-topic"
+    event_subscriptions = {
+      sub1 = {
+        name = "my-subscription"
+        destination = {
+          endpointType = "EventHub"
+          properties = {
+            resourceId = "/subscriptions/.../eventhubs/..."
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    name = string
+    event_subscriptions = optional(map(object({
+      name                            = string
+      destination                     = optional(any)
+      delivery_with_resource_identity = optional(any)
+      filter = optional(object({
+        advanced_filters                    = optional(list(any))
+        enable_advanced_filtering_on_arrays = optional(bool)
+        included_event_types                = optional(list(string))
+        is_subject_case_sensitive           = optional(bool, false)
+        subject_begins_with                 = optional(string)
+        subject_ends_with                   = optional(string)
+      }))
+      labels                = optional(list(string))
+      event_delivery_schema = optional(string)
+      retry_policy = optional(object({
+        event_time_to_live_in_minutes = optional(number, 1440)
+        max_delivery_attempts         = optional(number, 30)
+      }))
+      expiration_time_utc                = optional(string)
+      dead_letter_destination            = optional(any)
+      dead_letter_with_resource_identity = optional(any)
+      properties                         = optional(any, {})
+    })), {})
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
 Description: This variable controls whether or not telemetry is enabled for the module.  
@@ -128,6 +231,88 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_event_type_info"></a> [event\_type\_info](#input\_event\_type\_info)
+
+Description: Event type information for the domain. This includes:
+- `kind` - (Optional) The kind of event type info.
+- `inline_event_types` - (Optional) Map of inline event types with their metadata.
+
+Type:
+
+```hcl
+object({
+    kind = optional(string)
+    inline_event_types = optional(map(object({
+      description       = optional(string)
+      display_name      = optional(string)
+      data_schema_url   = optional(string)
+      documentation_url = optional(string)
+    })))
+  })
+```
+
+Default: `null`
+
+### <a name="input_inbound_ip_rules"></a> [inbound\_ip\_rules](#input\_inbound\_ip\_rules)
+
+Description: A list of inbound IP rules to restrict network access to the domain. Each rule must have an `ip_mask` and an `action` (e.g. 'Allow' or 'Deny').
+
+Type:
+
+```hcl
+list(object({
+    ip_mask = string
+    action  = string
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_input_schema"></a> [input\_schema](#input\_input\_schema)
+
+Description: Optional input schema for the domain. Allowed values: 'EventGridSchema' (default), 'CloudEventSchemaV1\_0', 'CustomEventSchema'.
+
+Type: `string`
+
+Default: `"EventGridSchema"`
+
+### <a name="input_input_schema_mapping"></a> [input\_schema\_mapping](#input\_input\_schema\_mapping)
+
+Description: Optional input schema mapping object. Use this to provide mappings when `input_schema` is 'CustomEventSchema'. The structure follows the ARM schema for JSON input mappings. Set `input_schema_mapping_type` to 'Json' and provide field mappings in the `properties` object.
+
+Type:
+
+```hcl
+object({
+    input_schema_mapping_type = string
+    properties = optional(object({
+      data_version = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      event_time = optional(object({
+        source_field = optional(string)
+      }))
+      event_type = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      id = optional(object({
+        source_field = optional(string)
+      }))
+      subject = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      topic = optional(object({
+        source_field = optional(string)
+      }))
+    }))
+  })
+```
+
+Default: `null`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -165,6 +350,14 @@ object({
 
 Default: `{}`
 
+### <a name="input_minimum_tls_version_allowed"></a> [minimum\_tls\_version\_allowed](#input\_minimum\_tls\_version\_allowed)
+
+Description: Minimum TLS version allowed for the Event Grid Domain. This maps to the ARM property `minimumTlsVersionAllowed`.
+
+Type: `string`
+
+Default: `"1.2"`
+
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
 Description: A map of private endpoints to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -198,6 +391,7 @@ map(object({
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
@@ -228,6 +422,22 @@ Description: Whether to manage private DNS zone groups with this module. If set 
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_properties"></a> [properties](#input\_properties)
+
+Description: A map of additional string properties to set on the Event Grid Domain resource. This allows passing ARM schema properties that are not explicitly modeled by this module. For complex object properties, use the explicitly-defined module variables. See schema at: https://learn.microsoft.com/en-us/azure/templates/microsoft.eventgrid/2025-02-15/domains
+
+Type: `map(string)`
+
+Default: `{}`
+
+### <a name="input_public_network_access"></a> [public\_network\_access](#input\_public\_network\_access)
+
+Description: Controls public network access for the domain. Must be one of: 'Enabled', 'Disabled'. Defaults to 'Disabled' to reduce public exposure by default.
+
+Type: `string`
+
+Default: `"Disabled"`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -273,13 +483,60 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_domain_endpoint"></a> [domain\_endpoint](#output\_domain\_endpoint)
+
+Description: The endpoint URL of the Event Grid Domain.
+
+### <a name="output_domain_topic_event_subscriptions"></a> [domain\_topic\_event\_subscriptions](#output\_domain\_topic\_event\_subscriptions)
+
+Description: A map of domain topic event subscriptions created. The map key is the combined topic-subscription key. The map value contains resource\_id and name.
+
+### <a name="output_domain_topics"></a> [domain\_topics](#output\_domain\_topics)
+
+Description: A map of domain topics created. The map key is the input key from var.domain\_topics. The map value contains resource\_id and name.
+
+### <a name="output_identity"></a> [identity](#output\_identity)
+
+Description: The managed identity configuration of the Event Grid Domain, including principal\_id and tenant\_id for system-assigned identity.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Event Grid Domain.
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
-Description:   A map of the private endpoints created.
+Description: A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azapi\_resource private endpoint resource.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The Azure Resource Manager ID of the Event Grid Domain.
+
+### <a name="output_system_assigned_mi_principal_id"></a> [system\_assigned\_mi\_principal\_id](#output\_system\_assigned\_mi\_principal\_id)
+
+Description: The principal ID of the system-assigned managed identity for the Event Grid Domain.  
+Use this to grant RBAC permissions for delivering events to destinations.
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_avm_interfaces"></a> [avm\_interfaces](#module\_avm\_interfaces)
+
+Source: Azure/avm-utl-interfaces/azure
+
+Version: 0.5.0
+
+### <a name="module_domain_topic"></a> [domain\_topic](#module\_domain\_topic)
+
+Source: ./modules/domain_topic
+
+Version:
+
+### <a name="module_domain_topic_event_subscription"></a> [domain\_topic\_event\_subscription](#module\_domain\_topic\_event\_subscription)
+
+Source: ./modules/domain_topic_event_subscription
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

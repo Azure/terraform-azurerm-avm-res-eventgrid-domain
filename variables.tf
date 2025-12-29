@@ -6,20 +6,41 @@ variable "location" {
 
 variable "name" {
   type        = string
-  description = "The name of the this resource."
+  description = "The name of the Event Grid Domain."
 
   validation {
-    condition     = can(regex("TODO", var.name))
-    error_message = "The name must be TODO." # TODO remove the example below once complete:
-    #condition     = can(regex("^[a-z0-9]{5,50}$", var.name))
-    #error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
+    condition     = can(regex("^[a-zA-Z0-9\\-]{3,50}$", var.name))
+    error_message = "The name must be between 3 and 50 characters and can contain only letters, numbers and hyphens."
   }
 }
 
-# This is required for most resource modules
-variable "resource_group_name" {
+variable "parent_id" {
   type        = string
-  description = "The resource group where the resources will be deployed."
+  description = <<DESCRIPTION
+The ID of the resource group where the Event Grid Domain will be deployed.
+DESCRIPTION
+
+  validation {
+    condition     = can(regex("^/subscriptions/[^/]+/resourceGroups/[^/]+$", var.parent_id))
+    error_message = "parent_id must be a valid resource group ID."
+  }
+}
+
+# Domain-specific variables
+variable "auto_create_topic_with_first_subscription" {
+  type        = bool
+  default     = null
+  description = <<DESCRIPTION
+Automatically create a topic within this domain when the first event subscription is created. Defaults to null (API default).
+DESCRIPTION
+}
+
+variable "auto_delete_topic_with_last_subscription" {
+  type        = bool
+  default     = null
+  description = <<DESCRIPTION
+Automatically delete a topic within this domain when the last event subscription is deleted. Defaults to null (API default).
+DESCRIPTION
 }
 
 # required AVM interfaces
@@ -43,6 +64,19 @@ A map describing customer-managed keys to associate with the resource. This incl
 - `user_assigned_identity` - (Optional) An object representing a user-assigned identity with the following properties:
   - `resource_id` - The resource ID of the user-assigned identity.
 DESCRIPTION
+}
+
+variable "data_residency_boundary" {
+  type        = string
+  default     = null
+  description = <<DESCRIPTION
+Data residency boundary to set on the Event Grid Domain. Maps to the ARM property `dataResidencyBoundary`. Allowed values: 'WithinGeopair' (API default) and 'WithinRegion'. If `null`, the module will set `WithinGeopair` in the ARM payload to make the default explicit.
+DESCRIPTION
+
+  validation {
+    condition     = var.data_residency_boundary == null || contains(["WithinGeopair", "WithinRegion"], var.data_residency_boundary)
+    error_message = "data_residency_boundary must be one of: 'WithinGeopair', 'WithinRegion', or null."
+  }
 }
 
 variable "diagnostic_settings" {
@@ -90,6 +124,83 @@ DESCRIPTION
   }
 }
 
+variable "disable_local_auth" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+When true the Event Grid Domain will have local authentication disabled (ARM property `disableLocalAuth`). The module will always set this property; default is `true` (local auth disabled).
+DESCRIPTION
+}
+
+variable "domain_topics" {
+  type = map(object({
+    name = string
+    event_subscriptions = optional(map(object({
+      name                            = string
+      destination                     = optional(any)
+      delivery_with_resource_identity = optional(any)
+      filter = optional(object({
+        advanced_filters                    = optional(list(any))
+        enable_advanced_filtering_on_arrays = optional(bool)
+        included_event_types                = optional(list(string))
+        is_subject_case_sensitive           = optional(bool, false)
+        subject_begins_with                 = optional(string)
+        subject_ends_with                   = optional(string)
+      }))
+      labels                = optional(list(string))
+      event_delivery_schema = optional(string)
+      retry_policy = optional(object({
+        event_time_to_live_in_minutes = optional(number, 1440)
+        max_delivery_attempts         = optional(number, 30)
+      }))
+      expiration_time_utc                = optional(string)
+      dead_letter_destination            = optional(any)
+      dead_letter_with_resource_identity = optional(any)
+      properties                         = optional(any, {})
+    })), {})
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map of domain topics to create with their nested event subscriptions.
+
+Each topic supports:
+- `name` - (Required) The name of the domain topic.
+- `event_subscriptions` - (Optional) A map of event subscriptions for this topic. Each subscription supports:
+  - `name` - (Required) The name of the event subscription.
+  - `destination` - (Optional) The destination for events.
+  - `delivery_with_resource_identity` - (Optional) Delivery configuration with managed identity.
+  - `filter` - (Optional) Event filtering configuration.
+  - `labels` - (Optional) List of labels for the subscription.
+  - `event_delivery_schema` - (Optional) Event delivery schema (EventGridSchema, CloudEventSchemaV1_0, CustomInputSchema).
+  - `retry_policy` - (Optional) Retry policy configuration.
+  - `expiration_time_utc` - (Optional) Expiration time in UTC.
+  - `dead_letter_destination` - (Optional) Dead letter destination configuration.
+  - `dead_letter_with_resource_identity` - (Optional) Dead letter destination with managed identity.
+  - `properties` - (Optional) Additional properties to pass directly.
+
+Example:
+```terraform
+domain_topics = {
+  topic1 = {
+    name = "my-topic"
+    event_subscriptions = {
+      sub1 = {
+        name = "my-subscription"
+        destination = {
+          endpointType = "EventHub"
+          properties = {
+            resourceId = "/subscriptions/.../eventhubs/..."
+          }
+        }
+      }
+    }
+  }
+}
+```
+DESCRIPTION
+  nullable    = false
+}
+
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -99,6 +210,86 @@ For more information see <https://aka.ms/avm/telemetryinfo>.
 If it is set to false, then no telemetry will be collected.
 DESCRIPTION
   nullable    = false
+}
+
+variable "event_type_info" {
+  type = object({
+    kind = optional(string)
+    inline_event_types = optional(map(object({
+      description       = optional(string)
+      display_name      = optional(string)
+      data_schema_url   = optional(string)
+      documentation_url = optional(string)
+    })))
+  })
+  default     = null
+  description = <<DESCRIPTION
+Event type information for the domain. This includes:
+- `kind` - (Optional) The kind of event type info.
+- `inline_event_types` - (Optional) Map of inline event types with their metadata.
+DESCRIPTION
+}
+
+variable "inbound_ip_rules" {
+  type = list(object({
+    ip_mask = string
+    action  = string
+  }))
+  default     = []
+  description = <<DESCRIPTION
+A list of inbound IP rules to restrict network access to the domain. Each rule must have an `ip_mask` and an `action` (e.g. 'Allow' or 'Deny').
+DESCRIPTION
+}
+
+variable "input_schema" {
+  type        = string
+  default     = "EventGridSchema"
+  description = <<DESCRIPTION
+Optional input schema for the domain. Allowed values: 'EventGridSchema' (default), 'CloudEventSchemaV1_0', 'CustomEventSchema'.
+DESCRIPTION
+
+  validation {
+    condition     = contains(["EventGridSchema", "CloudEventSchemaV1_0", "CustomEventSchema"], var.input_schema)
+    error_message = "input_schema must be one of: 'EventGridSchema', 'CloudEventSchemaV1_0', or 'CustomEventSchema'."
+  }
+}
+
+variable "input_schema_mapping" {
+  type = object({
+    input_schema_mapping_type = string
+    properties = optional(object({
+      data_version = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      event_time = optional(object({
+        source_field = optional(string)
+      }))
+      event_type = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      id = optional(object({
+        source_field = optional(string)
+      }))
+      subject = optional(object({
+        default_value = optional(string)
+        source_field  = optional(string)
+      }))
+      topic = optional(object({
+        source_field = optional(string)
+      }))
+    }))
+  })
+  default     = null
+  description = <<DESCRIPTION
+Optional input schema mapping object. Use this to provide mappings when `input_schema` is 'CustomEventSchema'. The structure follows the ARM schema for JSON input mappings. Set `input_schema_mapping_type` to 'Json' and provide field mappings in the `properties` object.
+DESCRIPTION
+
+  validation {
+    condition     = var.input_schema_mapping == null ? true : var.input_schema_mapping.input_schema_mapping_type == "Json"
+    error_message = "input_schema_mapping_type must be 'Json' when input_schema_mapping is provided."
+  }
 }
 
 variable "lock" {
@@ -136,6 +327,19 @@ DESCRIPTION
   nullable    = false
 }
 
+variable "minimum_tls_version_allowed" {
+  type        = string
+  default     = "1.2"
+  description = <<DESCRIPTION
+Minimum TLS version allowed for the Event Grid Domain. This maps to the ARM property `minimumTlsVersionAllowed`.
+DESCRIPTION
+
+  validation {
+    condition     = contains(["1.0", "1.1", "1.2"], var.minimum_tls_version_allowed)
+    error_message = "minimum_tls_version_allowed must be one of: '1.0', '1.1', '1.2'."
+  }
+}
+
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -147,6 +351,7 @@ variable "private_endpoints" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
       kind = string
@@ -198,6 +403,26 @@ variable "private_endpoints_manage_dns_zone_group" {
   default     = true
   description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
   nullable    = false
+}
+
+variable "properties" {
+  type        = map(string)
+  default     = {}
+  description = "A map of additional string properties to set on the Event Grid Domain resource. This allows passing ARM schema properties that are not explicitly modeled by this module. For complex object properties, use the explicitly-defined module variables. See schema at: https://learn.microsoft.com/en-us/azure/templates/microsoft.eventgrid/2025-02-15/domains"
+  nullable    = false
+}
+
+variable "public_network_access" {
+  type        = string
+  default     = "Disabled"
+  description = <<DESCRIPTION
+Controls public network access for the domain. Must be one of: 'Enabled', 'Disabled'. Defaults to 'Disabled' to reduce public exposure by default.
+DESCRIPTION
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.public_network_access)
+    error_message = "public_network_access must be one of: 'Enabled', 'Disabled'."
+  }
 }
 
 variable "role_assignments" {
