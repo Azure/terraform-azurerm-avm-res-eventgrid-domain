@@ -61,7 +61,7 @@ resource "azapi_resource" "storage_account" {
   body = {
     kind = "StorageV2"
     sku = {
-      name = "Standard_LRS"
+      name = "Standard_ZRS"
     }
     properties = {
       allowSharedKeyAccess = false # Security best practice - no keys
