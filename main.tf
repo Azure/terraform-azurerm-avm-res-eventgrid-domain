@@ -25,42 +25,43 @@ resource "azapi_resource" "this" {
   }
 }
 
-# Diagnostic settings for the Event Grid Domain
-resource "azurerm_monitor_diagnostic_setting" "this" {
+# Diagnostic settings for the Event Grid Domain using AzAPI provider
+resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
-  name                           = each.value.name != null ? each.value.name : "diag-${var.name}"
-  target_resource_id             = azapi_resource.this.id
-  eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
-  eventhub_name                  = each.value.event_hub_name
-  log_analytics_destination_type = each.value.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.workspace_resource_id
-  partner_solution_id            = each.value.marketplace_partner_resource_id
-  storage_account_id             = each.value.storage_account_resource_id
+  name      = each.value.name != null ? each.value.name : "diag-${var.name}"
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+  body = {
+    properties = {
+      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
+      eventHubName                = each.value.event_hub_name
+      logAnalyticsDestinationType = each.value.log_analytics_destination_type
+      marketplacePartnerId        = each.value.marketplace_partner_resource_id
+      storageAccountId            = each.value.storage_account_resource_id
+      workspaceId                 = each.value.workspace_resource_id
 
-  dynamic "enabled_log" {
-    for_each = length(each.value.log_categories) > 0 ? each.value.log_categories : (length(each.value.log_groups) == 0 ? [] : each.value.log_groups)
+      logs = [
+        for log_category in(length(each.value.log_categories) > 0 ? each.value.log_categories : (length(each.value.log_groups) > 0 ? each.value.log_groups : [])) : {
+          category      = length(each.value.log_categories) > 0 ? log_category : null
+          categoryGroup = length(each.value.log_groups) > 0 ? log_category : null
+          enabled       = true
+        }
+      ]
 
-    content {
-      category       = length(each.value.log_categories) > 0 ? enabled_log.value : null
-      category_group = length(each.value.log_groups) > 0 ? enabled_log.value : null
+      metrics = [
+        for metric_category in each.value.metric_categories : {
+          category = metric_category
+          enabled  = true
+        }
+      ]
     }
   }
-  dynamic "metric" {
-    for_each = length(each.value.metric_categories) > 0 ? each.value.metric_categories : []
-
-    content {
-      category = metric.value
-    }
-  }
-
-  lifecycle {
-    ignore_changes = [
-      # Azure API doesn't return log_analytics_destination_type in response
-      # causing perpetual drift - ignore changes to prevent this
-      log_analytics_destination_type
-    ]
-  }
+  create_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_missing_property = true
+  read_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # required AVM resources interfaces (scoped to the created domain)
