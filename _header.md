@@ -1,3 +1,3 @@
-# terraform-azurerm-avm-template
+# terraform-azurerm-avm-res-eventgrid-domain
 
-This is a template repo for Terraform Azure Verified Modules.
+Terraform Azure Verified Resource Module for managing an EventGrid Domain.
