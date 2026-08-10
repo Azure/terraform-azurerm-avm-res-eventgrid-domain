@@ -26,4 +26,3 @@ locals {
   # Map of user-assigned identity resource ids required by the resource (as a map keyed by resource id)
   user_assigned_id_map = length(var.managed_identities.user_assigned_resource_ids) > 0 ? { for id in var.managed_identities.user_assigned_resource_ids : id => {} } : {}
 }
-
