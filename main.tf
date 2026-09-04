@@ -7,13 +7,9 @@ resource "azapi_resource" "this" {
   body = {
     properties = local.domain_properties
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = ["identity"]
   tags                   = var.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "identity" {
     for_each = local.identity_required ? [1] : []
@@ -57,11 +53,7 @@ resource "azapi_resource" "diagnostic_settings" {
       ]
     }
   }
-  create_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_missing_property = true
-  read_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # required AVM resources interfaces (scoped to the created domain)
@@ -77,10 +69,6 @@ resource "azapi_resource" "management_lock" {
       notes = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 resource "azapi_resource" "role_assignment" {
@@ -100,11 +88,7 @@ resource "azapi_resource" "role_assignment" {
       description                        = "Role assignment managed by AVM module"
     }
   }
-  create_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_missing_property = true
-  read_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers          = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   lifecycle {
     ignore_changes = [name]
