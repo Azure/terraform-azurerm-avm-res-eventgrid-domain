@@ -31,7 +31,7 @@ module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "0.9.0"
 
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
 }
 
 # This allows us to randomize the region for the resource group.
@@ -93,7 +93,7 @@ module "test" {
   location         = azurerm_resource_group.this.location
   name             = module.naming.eventgrid_domain.name_unique
   parent_id        = azurerm_resource_group.this.id
-  enable_telemetry = false # see variables.tf
+  enable_telemetry = var.enable_telemetry # see variables.tf
   # Enable system-assigned managed identity for secure delivery
   managed_identities = {
     system_assigned = true
