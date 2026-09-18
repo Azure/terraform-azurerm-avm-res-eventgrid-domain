@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Event Grid Domain",
+  "moduleDescription": "AVM Resource Module for Event Grid Domain",
+  "canonicalType": "Microsoft.EventGrid/domains",
+  "owners": [
+    "sujaypillai"
+  ],
+  "telemetryIdPrefix": "46d3xtrf.res.3af2933"
+}
