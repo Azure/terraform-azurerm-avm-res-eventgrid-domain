@@ -215,7 +215,7 @@ locals {
 resource "azapi_resource" "this" {
   name      = var.name
   parent_id = var.event_grid_domain_resource_id
-  type      = "Microsoft.EventGrid/domains/eventSubscriptions@2025-02-15"
+  type      = var.resource_types.eventgrid_domains_event_subscriptions
   body = {
     properties = merge(
       # Direct destination (without managed identity)
@@ -294,9 +294,21 @@ resource "azapi_resource" "this" {
       } : {}
     )
   }
+  ignore_body_changes       = length(var.ignore_body_changes.eventgrid_domains_event_subscriptions) > 0 ? var.ignore_body_changes.eventgrid_domains_event_subscriptions : null
   ignore_casing             = true
   ignore_missing_property   = true
   ignore_null_property      = true
   response_export_values    = ["*"]
+  retry                     = var.retry
   schema_validation_enabled = false
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }

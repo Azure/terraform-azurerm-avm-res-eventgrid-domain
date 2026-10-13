@@ -38,7 +38,68 @@ Type: `string`
 
 ## Optional Inputs
 
-No optional inputs.
+The following input variables are optional (have default values):
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: eventgrid\_domains\_topics contains body-relative dot-notation paths ignored on the topic. Ignored configuration is not sent to Azure until removed; changes take effect after apply. Non-empty lists require Terraform 1.11 or later.
+
+Type:
+
+```hcl
+object({
+    eventgrid_domains_topics = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI types and API versions. eventgrid\_domains\_topics controls the domain topic resource.
+
+Type:
+
+```hcl
+object({
+    eventgrid_domains_topics = optional(string, "Microsoft.EventGrid/domains/topics@2025-02-15")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Optional AzAPI error\_message\_regex, interval\_seconds, and max\_interval\_seconds retry settings. Null preserves provider defaults.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Optional AzAPI create, read, update, and delete duration strings. Null preserves provider defaults.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
 
 ## Outputs
 

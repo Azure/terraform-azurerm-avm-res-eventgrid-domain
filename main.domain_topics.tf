@@ -2,8 +2,12 @@ module "domain_topic" {
   source   = "./modules/domain_topic"
   for_each = var.domain_topics
 
-  name      = each.value.name
-  parent_id = azapi_resource.this.id
+  name                = each.value.name
+  parent_id           = azapi_resource.this.id
+  ignore_body_changes = var.ignore_body_changes.eventgrid_domains_topics
+  resource_types      = var.resource_types.eventgrid_domains_topics
+  retry               = var.retry
+  timeouts            = var.timeouts
 }
 
 module "domain_topic_event_subscription" {
@@ -26,7 +30,11 @@ module "domain_topic_event_subscription" {
   event_delivery_schema              = each.value.event_delivery_schema
   expiration_time_utc                = each.value.expiration_time_utc
   filter                             = each.value.filter
+  ignore_body_changes                = var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions
   labels                             = each.value.labels
   properties                         = each.value.properties
+  resource_types                     = var.resource_types.eventgrid_domains_topics_event_subscriptions
+  retry                              = var.retry
   retry_policy                       = each.value.retry_policy
+  timeouts                           = var.timeouts
 }

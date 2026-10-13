@@ -16,9 +16,22 @@ locals {
 resource "azapi_resource" "this" {
   name      = var.name
   parent_id = var.parent_id
-  type      = "Microsoft.EventGrid/domains/topics/eventSubscriptions@2025-02-15"
+  type      = var.resource_types.eventgrid_domains_topics_event_subscriptions
   body = {
     properties = local.subscription_properties
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions) > 0 ? var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
   }
 
   lifecycle {
