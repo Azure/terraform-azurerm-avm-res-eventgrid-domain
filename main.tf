@@ -3,13 +3,25 @@ resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
   parent_id = var.parent_id
-  type      = "Microsoft.EventGrid/domains@2025-02-15"
+  type      = var.resource_types.eventgrid_domains
   body = {
     properties = local.domain_properties
   }
+  ignore_body_changes    = length(var.ignore_body_changes.eventgrid_domains) > 0 ? var.ignore_body_changes.eventgrid_domains : null
   ignore_null_property   = true
-  response_export_values = ["identity"]
+  response_export_values = ["identity", "properties.endpoint"]
+  retry                  = var.retry
   tags                   = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 
   dynamic "identity" {
     for_each = local.identity_required ? [1] : []
@@ -27,7 +39,7 @@ resource "azapi_resource" "diagnostic_settings" {
 
   name      = each.value.name != null ? each.value.name : "diag-${var.name}"
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+  type      = var.resource_types.insights_diagnostic_settings
   body = {
     properties = {
       eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
@@ -53,7 +65,20 @@ resource "azapi_resource" "diagnostic_settings" {
       ]
     }
   }
+  ignore_body_changes     = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   ignore_missing_property = true
+  response_export_values  = []
+  retry                   = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
 
 # required AVM resources interfaces (scoped to the created domain)
@@ -62,13 +87,37 @@ resource "azapi_resource" "management_lock" {
 
   name      = coalesce(var.lock.name, "lock-${var.lock.kind}")
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/locks@2020-05-01"
+  type      = var.resource_types.authorization_locks
   body = {
     properties = {
       level = var.lock.kind
-      notes = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+      notes = coalesce(var.lock.notes, var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources.")
     }
   }
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
+
+  depends_on = [
+    azapi_resource.diagnostic_settings,
+    azapi_resource.role_assignment,
+    azapi_resource.private_endpoints,
+    azapi_resource.private_dns_zone_groups,
+    azapi_resource.private_endpoint_locks,
+    azapi_resource.private_endpoint_role_assignments,
+    module.domain_topic,
+    module.domain_topic_event_subscription,
+  ]
 }
 
 resource "azapi_resource" "role_assignment" {
@@ -76,7 +125,7 @@ resource "azapi_resource" "role_assignment" {
 
   name      = uuid()
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  type      = var.resource_types.authorization_role_assignments
   body = {
     properties = {
       principalId                        = each.value.principal_id
@@ -88,7 +137,20 @@ resource "azapi_resource" "role_assignment" {
       description                        = "Role assignment managed by AVM module"
     }
   }
+  ignore_body_changes     = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_missing_property = true
+  response_export_values  = []
+  retry                   = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 
   lifecycle {
     ignore_changes = [name]
