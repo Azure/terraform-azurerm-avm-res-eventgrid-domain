@@ -2,8 +2,10 @@ module "domain_topic" {
   source   = "./modules/domain_topic"
   for_each = var.domain_topics
 
+  location            = var.location
   name                = each.value.name
   parent_id           = azapi_resource.this.id
+  enable_telemetry    = var.enable_telemetry
   ignore_body_changes = var.ignore_body_changes.eventgrid_domains_topics
   resource_types      = var.resource_types.eventgrid_domains_topics
   retry               = var.retry
@@ -21,12 +23,14 @@ module "domain_topic_event_subscription" {
     }
   ]...)
 
+  location                           = var.location
   name                               = each.value.name
   parent_id                          = each.value.parent_id
   dead_letter_destination            = each.value.dead_letter_destination
   dead_letter_with_resource_identity = each.value.dead_letter_with_resource_identity
   delivery_with_resource_identity    = each.value.delivery_with_resource_identity
   destination                        = each.value.destination
+  enable_telemetry                   = var.enable_telemetry
   event_delivery_schema              = each.value.event_delivery_schema
   expiration_time_utc                = each.value.expiration_time_utc
   filter                             = each.value.filter

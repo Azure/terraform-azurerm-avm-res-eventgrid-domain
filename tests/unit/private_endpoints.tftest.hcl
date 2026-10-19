@@ -18,8 +18,9 @@ mock_provider "azapi" {
   }
   mock_data "azapi_client_config" {
     defaults = {
-      subscription_id = "00000000-0000-0000-0000-000000000000"
-      tenant_id       = "00000000-0000-0000-0000-000000000012"
+      subscription_id          = "00000000-0000-0000-0000-000000000000"
+      tenant_id                = "00000000-0000-0000-0000-000000000012"
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
     }
   }
   mock_data "azapi_resource_list" {
@@ -33,7 +34,7 @@ mock_provider "azapi" {
     }
   }
 }
-mock_provider "modtm" {}
+
 mock_provider "random" {
   mock_resource "random_uuid" {
     defaults = {
@@ -72,6 +73,10 @@ run "omitted_endpoints_preserve_domain_defaults" {
     )
     error_message = "Endpoint repairs must preserve domain defaults and export the documented domain endpoint."
   }
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "generated_names_and_dynamic_addressing_remain_compatible" {
@@ -103,6 +108,10 @@ run "generated_names_and_dynamic_addressing_remain_compatible" {
     )
     error_message = "Dynamic addressing must still target domain and must not create an empty DNS group."
   }
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "explicit_endpoint_name_preserves_legacy_connection_name" {
@@ -123,6 +132,10 @@ run "explicit_endpoint_name_preserves_legacy_connection_name" {
       output.private_endpoints["arbitrary"].body.properties.privateLinkServiceConnections[0].name == "pcon-existing-endpoint"
     )
     error_message = "Adding domain subresource forwarding must not rename a working explicitly named endpoint or its NIC/connection."
+  }
+  providers = {
+    azapi  = azapi
+    random = random
   }
 }
 
@@ -268,6 +281,10 @@ run "all_endpoint_controls_are_honored" {
     ])
     error_message = "Retry and operation timeouts must apply to every endpoint and extension resource."
   }
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "dns_management_opt_out_is_respected" {
@@ -285,6 +302,10 @@ run "dns_management_opt_out_is_respected" {
   assert {
     condition     = length(output.private_endpoints) == 1 && length(azapi_resource.private_dns_zone_groups) == 0
     error_message = "Opting out of DNS management must keep the endpoint and leave DNS groups unmanaged."
+  }
+  providers = {
+    azapi  = azapi
+    random = random
   }
 }
 
@@ -316,6 +337,10 @@ run "domain_lock_and_tags_propagate_with_per_endpoint_opt_out" {
     )
     error_message = "Domain locks and tags must propagate unless an endpoint explicitly opts out or supplies replacement tags."
   }
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "role_names_and_generated_assignment_guids_work" {
@@ -340,6 +365,10 @@ run "role_names_and_generated_assignment_guids_work" {
       azapi_resource.private_endpoint_role_assignments["arbitrary-reader"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
     )
     error_message = "Role-name resolution and generated GUID names must work without Azure access when providers are mocked."
+  }
+  providers = {
+    azapi  = azapi
+    random = random
   }
 }
 
@@ -371,6 +400,10 @@ run "explicit_null_optionals_use_compatible_defaults" {
       length(azapi_resource.private_dns_zone_groups) == 0
     )
     error_message = "Explicit null optional fields must use the same defaults as omitted fields."
+  }
+  providers = {
+    azapi  = azapi
+    random = random
   }
 }
 
@@ -409,6 +442,10 @@ run "topic_callers_and_output_keys_remain_compatible" {
     )
     error_message = "Existing topic/subscription caller shapes, instance keys and outputs must remain unchanged when endpoint support is repaired."
   }
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_subnet_is_rejected" {
@@ -417,6 +454,10 @@ run "invalid_subnet_is_rejected" {
     private_endpoints = { invalid = { subnet_resource_id = "/not-a-subnet" } }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_dns_zone_is_rejected" {
@@ -430,6 +471,10 @@ run "invalid_dns_zone_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_asg_is_rejected" {
@@ -443,6 +488,10 @@ run "invalid_asg_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_delegated_identity_is_rejected" {
@@ -462,6 +511,10 @@ run "invalid_delegated_identity_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "non_domain_subresource_is_rejected" {
@@ -475,6 +528,10 @@ run "non_domain_subresource_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_resource_group_override_is_rejected" {
@@ -488,6 +545,10 @@ run "invalid_resource_group_override_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
 
 run "invalid_lock_kind_is_rejected" {
@@ -501,4 +562,8 @@ run "invalid_lock_kind_is_rejected" {
     }
   }
   expect_failures = [var.private_endpoints]
+  providers = {
+    azapi  = azapi
+    random = random
+  }
 }
