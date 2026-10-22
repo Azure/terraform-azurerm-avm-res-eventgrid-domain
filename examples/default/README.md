@@ -122,9 +122,6 @@ resource "azapi_resource" "storage_queue" {
 # with a data source.
 module "test" {
   source = "../../"
-  providers = {
-    azapi = azapi
-  }
 
   location         = azurerm_resource_group.this.location
   name             = module.naming.eventgrid_domain.name_unique
