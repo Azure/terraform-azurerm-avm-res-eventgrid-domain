@@ -21,7 +21,7 @@ resource "azapi_resource" "this" {
     properties = local.subscription_properties
   }
   ignore_body_changes    = length(var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions) > 0 ? var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions : null
-  response_export_values = []
+  response_export_values = null
   retry                  = var.retry
 
   dynamic "timeouts" {
