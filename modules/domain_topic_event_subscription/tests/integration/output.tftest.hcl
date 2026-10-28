@@ -7,7 +7,7 @@ run "create_test_prerequisites" {
   command = apply
 
   module {
-    source = "./tests/integration/fixtures/prerequisites"
+    source = "../../tests/integration/fixtures/domain_topic_prerequisites"
   }
 }
 
