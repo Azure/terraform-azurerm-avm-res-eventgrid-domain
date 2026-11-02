@@ -123,7 +123,6 @@ module "domain_event_subscription" {
   source = "../../modules/domain_event_subscription"
 
   event_grid_domain_resource_id = module.test.resource_id
-  location                      = var.location
   name                          = "example-domain-subscription"
   # Use managed identity for secure delivery (no shared keys)
   delivery_with_resource_identity = {
@@ -154,7 +153,8 @@ module "domain_event_subscription" {
     ]
   }
   # Labels for organization
-  labels = ["example", "default"]
+  labels   = ["example", "default"]
+  location = var.location
   # Retry policy
   retry_policy = {
     max_delivery_attempts         = 30
