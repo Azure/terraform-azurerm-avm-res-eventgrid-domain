@@ -29,7 +29,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.13.0"
+  version = "0.13.2"
 
   location         = var.location
   enable_telemetry = var.enable_telemetry
@@ -46,7 +46,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This is required for resource modules
@@ -123,7 +123,6 @@ module "domain_event_subscription" {
   source = "../../modules/domain_event_subscription"
 
   event_grid_domain_resource_id = module.test.resource_id
-  location                      = var.location
   name                          = "example-domain-subscription"
   # Use managed identity for secure delivery (no shared keys)
   delivery_with_resource_identity = {
@@ -154,7 +153,8 @@ module "domain_event_subscription" {
     ]
   }
   # Labels for organization
-  labels = ["example", "default"]
+  labels   = ["example", "default"]
+  location = var.location
   # Retry policy
   retry_policy = {
     max_delivery_attempts         = 30
