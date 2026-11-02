@@ -11,12 +11,6 @@ DESCRIPTION
   }
 }
 
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "name" {
   type        = string
   description = "The name of the event subscription."
@@ -338,6 +332,17 @@ variable "labels" {
   type        = list(string)
   default     = null
   description = "A list of labels to apply to the event subscription."
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "retry_policy" {

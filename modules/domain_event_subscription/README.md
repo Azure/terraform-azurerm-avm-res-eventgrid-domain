@@ -98,12 +98,6 @@ This can be an existing domain not managed by the parent module.
 
 Type: `string`
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region for this module's resources or telemetry deployment.
-
-Type: `string`
-
 ### <a name="input_name"></a> [name](#input\_name)
 
 Description: The name of the event subscription.
@@ -456,6 +450,14 @@ Default: `{}`
 Description: A list of labels to apply to the event subscription.
 
 Type: `list(string)`
+
+Default: `null`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
 
 Default: `null`
 
