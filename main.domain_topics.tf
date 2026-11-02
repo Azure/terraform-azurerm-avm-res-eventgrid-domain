@@ -2,11 +2,11 @@ module "domain_topic" {
   source   = "./modules/domain_topic"
   for_each = var.domain_topics
 
-  location            = var.location
   name                = each.value.name
   parent_id           = azapi_resource.this.id
   enable_telemetry    = var.enable_telemetry
   ignore_body_changes = var.ignore_body_changes.eventgrid_domains_topics
+  location            = var.location
   resource_types      = var.resource_types.eventgrid_domains_topics
   retry               = var.retry
   timeouts            = var.timeouts
@@ -23,7 +23,6 @@ module "domain_topic_event_subscription" {
     }
   ]...)
 
-  location                           = var.location
   name                               = each.value.name
   parent_id                          = each.value.parent_id
   dead_letter_destination            = each.value.dead_letter_destination
@@ -36,6 +35,7 @@ module "domain_topic_event_subscription" {
   filter                             = each.value.filter
   ignore_body_changes                = var.ignore_body_changes.eventgrid_domains_topics_event_subscriptions
   labels                             = each.value.labels
+  location                           = var.location
   properties                         = each.value.properties
   resource_types                     = var.resource_types.eventgrid_domains_topics_event_subscriptions
   retry                              = var.retry
